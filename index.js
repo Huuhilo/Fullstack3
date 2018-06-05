@@ -5,14 +5,16 @@ var morgan = require('morgan')
 
 app.use(bodyParser.json())
 
+app.use(express.static('build'))
 
+
+// Morgan
 morgan.token('person', function getPerson (req) {
   return req.person
 })
 
 app.use('/api/persons', morgan(':method :person :url :status :res[content-length] - :response-time'))
 
-// Morgan
 app.use(assignPerson)
 
 const cors = require('cors');
