@@ -1,10 +1,33 @@
 const express = require('express')
 const app = express()
 const bodyParser = require('body-parser')
+var morgan = require('morgan')
 
 app.use(bodyParser.json())
 
-persons = [
+
+morgan.token('person', function getPerson (req) {
+  return req.person
+})
+
+app.use('/api/persons', morgan(':method :person :url :status :res[content-length] - :response-time'))
+
+// Morgan
+app.use(assignPerson)
+
+const cors = require('cors');
+app.use(cors())
+
+
+function assignPerson (req, res, next) {
+  console.log("morgan: ", req.method)
+  if (req.method === "POST") {
+    req.person = JSON.stringify({ name: req.body.name, number: req.body.number })
+  }
+  next()
+}
+
+let persons = [
       {
         "name": "Arto Hellas",
         "number": "040-123456",
@@ -53,10 +76,30 @@ app.delete('/api/persons/:id', (req, res) => {
   })
 
 app.post('/api/persons', (req, res) => {
-    const note = req.body
-    console.log(person)
+    const body = req.body
+    console.log(body)
   
-    response.json(person)
+    if (body.number === undefined || body.name === undefined) {
+      return res.status(400).json({error: 'content missing'})
+    }
+
+    console.log(persons)
+    console.log(body.name)
+    if (persons.find(person => person.name === body.name)) {
+      return res.status(400).json({error: 'name already exists'})
+    }
+    
+
+    const generateId = () => { return Math.round(Math.random() * 999999) }
+
+    const person = {
+      number: body.number,
+      name: body.name,
+      id: generateId()
+    }
+
+    persons = persons.concat(person);
+    res.json(persons)
   })
 
 
@@ -70,6 +113,5 @@ app.post('/api/persons', (req, res) => {
   })
 
 
-const port = 3001
-app.listen(port)
-console.log(`Server running on port ${port}`)
+const port = process.env.PORT || 3001
+app.listen(port, () => {console.log(`Server running on port ${port}`)})
